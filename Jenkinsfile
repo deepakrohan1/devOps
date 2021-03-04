@@ -1,30 +1,35 @@
+node {
+    stage('SCM Checkout') {
+        git 'https://github.com/deepakrohan1/DevOps-Demo-WebApp.git'
+    }
 
-pipeline {
-    agent {
-        docker {
-            image 'maven:3-alpine'
-            args '-v /root/.m2:/root/.m2'
+    stage('Compile Package') {
+        def mvnHome = tool name: 'Maven3.6.3', type: 'maven'
+        sh "${mvnHome}/bin/mvn clean package -DskipTests=true"
+        slackSend channel: 'alerts-fromjenkins', message: 'Packaging Java Code'
+    }
+  
+    stage('Sonarqube Analysis') {
+         def runner = tool name: 'sonarqube', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+         withSonarQubeEnv('sonarqube') {
+             sh "${runner}/bin/sonar-scanner"
+             slackSend channel: 'alerts-fromjenkins', message: 'Sonar Scan completed'
         }
     }
-    stages {
-        stage('Build') {
-            steps {
-                sh 'mvn -B -DskipTests clean package'
-            }
-        }
-        stage('Test') {
-            steps {
-                sh 'mvn test'
-            }
-            post {
-                always {
-                    junit 'target/surefire-reports/*.xml'
-                }
-            }
-        }
-        stage('Deliver') {
-            steps {
-            }
-        }
+     stage('Blazemeter tests'){
+        blazeMeterTest credentialsId: 'blazemeter', testId: '9014496.taurus', workspaceId: '756008'
+    }
+
+    stage('Deploy File to Test') {
+        deploy adapters: [tomcat8(credentialsId: 'tomcat-1', path: '', url: 'http://3.138.156.237:8080/')], contextPath: '/QAWebapp', onFailure: false, war: '**/*.war'
+    }
+
+     stage('Sanity Check') {
+        def workspace = pwd()
+        print("{$workspace}")
+         def mvnHome = tool name: 'Maven3.6.3', type: 'maven'
+        sh "${mvnHome}/bin/mvn -f $workspace/Acceptancetest/pom.xml test"
+        publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: '\\Acceptancetest\\target\\surefire-reports', reportFiles: 'index.html', reportName: 'Sanity Test Report', reportTitles: ''])
+        slackSend channel: 'alerts-fromjenkins', message: 'Completed the Sanity Check Review reports under sure-fire'
     }
 }
