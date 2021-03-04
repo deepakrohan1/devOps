@@ -24,6 +24,13 @@ node {
         deploy adapters: [tomcat8(credentialsId: 'tomcat-1', path: '', url: 'http://3.138.156.237:8080/')], contextPath: '/QAWebapp', onFailure: false, war: '**/*.war'
     }
 
+    // Need to install docker pipeline plugins
+    stage('Docker push') {
+        withDockerRegistry(credentialsId: 'dockerhub', toolName: 'dockerhub', url: 'https://registry.hub.docker.com/') {
+        def image = docker.build("deepakrohan/myapp:1")
+        image.push()
+    }
+
      stage('Sanity Check') {
         def workspace = pwd()
         print("{$workspace}")
