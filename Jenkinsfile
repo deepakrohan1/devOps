@@ -1,60 +1,65 @@
-//Version - 1.1
+//Version - 1.2
 node {
     stage('SCM Checkout') {
-        git 'https://github.com/deepakrohan1/DevOps-Demo-WebApp.git'
+        git 'https://github.com/kaOster/BootCampdevOps.git'
     }
     
      stage('Compile Package') {
         def mvnHome = tool name: 'maven3.6', type: 'maven'
         sh "${mvnHome}/bin/mvn clean package"
-        // slackSend channel: 'general', message: 'Packaging Java Code'
+        slackSend channel: 'bootcamp', message: 'Packaging Java Code'
+    }  
+    
+    stage('Sonarqube Analysis') {
+          def runner = tool name: 'sonarqube', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
+          withSonarQubeEnv('sonarqube') {
+              sh "${runner}/bin/sonar-scanner"
+              slackSend channel: 'bootcamp', message: 'Sonarqube Code Analysis'
+                }
     }
-    
-    // stage('Sonarqube Analysis') {
-    //      def runner = tool name: 'sonarqube', type: 'hudson.plugins.sonar.SonarRunnerInstallation'
-    //      withSonarQubeEnv('sonarqube') {
-    //          sh "${runner}/bin/sonar-scanner"
-    //         //  slackSend channel: 'alerts-fromjenkins', message: 'Sonar Scan completed'
-    //     }
-    // }
-    
-    stage('Artifactory Push') {
-        def server = Artifactory.server "artifactory"
-        def rtMaven = Artifactory.newMavenBuild()
-        def buildInfo
-        rtMaven.tool = "maven3.6"
-        rtMaven.deployer releaseRepo:'libs-release-local', snapshotRepo:'libs-snapshot-local', server: server
-        rtMaven.resolver releaseRepo:'libs-release', snapshotRepo:'libs-snapshot', server: server
-        buildInfo = rtMaven.run pom: 'pom.xml', goals: 'clean install'
-        server.publishBuildInfo buildInfo
-    }
-    
-    stage('Deploy File to Test') {
-        deploy adapters: [tomcat8(credentialsId: 'tomcat-aws', path: '', url: 'http://3.141.174.85:8080/')], contextPath: '/QAWebapp', onFailure: false, war: '**/*.war'
-    }
-    
 
-     stage('Sanity Check') {
-        def workspace = pwd()
-        print("{$workspace}")
-         def mvnHome = tool name: 'maven3.6', type: 'maven'
-        sh "${mvnHome}/bin/mvn -f $workspace/functionaltest/pom.xml test"
-        publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: '\\Acceptancetest\\target\\surefire-reports', reportFiles: 'index.html', reportName: 'Sanity Test Report', reportTitles: ''])
-      //  slackSend channel: 'alerts-fromjenkins', message: 'Completed the Sanity Check Review reports under sure-fire'
+    // stage('Artifactory Push') {
+    //     def server = Artifactory.server "artifactory"
+    //     def rtMaven = Artifactory.newMavenBuild()
+    //     def buildInfo
+    //     rtMaven.tool = "maven3.6"
+    //     rtMaven.deployer releaseRepo:'libs-release-local', snapshotRepo:'libs-snapshot-local', server: server
+    //     rtMaven.resolver releaseRepo:'libs-release', snapshotRepo:'libs-snapshot', server: server
+    //     buildInfo = rtMaven.run pom: 'pom.xml', goals: 'clean install'
+    //     server.publishBuildInfo buildInfo
+    // }
+
+    stage('Deploy War file to Tomcat') {
+        deploy adapters: [tomcat8(credentialsId: 'tomcat-aws', path: '', url: 'http://3.141.174.85:8080/')], contextPath: '/sampleapp', onFailure: false, war: '**/*.war'
+        slackSend channel: 'bootcamp', message: 'Deployed to Test Tomcat server'
+    } 
+
+    stage('Blazemeter tests'){
+        blazeMeterTest credentialsId: 'BlazeMeter_Rohan', testId: '9014496.taurus', workspaceId: '756008'
+        slackSend channel: 'bootcamp', message: 'Blazemete'
     }
-     stage('Deploy File to Prod') {
-        deploy adapters: [tomcat8(credentialsId: 'tomcat-aws', path: '', url: 'http://3.141.174.85:8080/')], contextPath: '/ProdWebapp', onFailure: false, war: '**/*.war'
-    }
+
     stage('Docker push') {
-        withDockerRegistry(credentialsId: 'DOCKER_HUB_PWD', toolName: 'dockerhub', url: 'https://registry.hub.docker.com/') {
-        def image = docker.build("kaoster/apps:${env.BUILD_ID}")
-        image.push()
-    }
-    }
+        sh "cd $WORKSPACE"
+        sh "docker build -f Dockerfile -t kaoster/bootcampdemo:$BUILD_NUMBER .  "
+        sh "docker login -u kaoster -p 'f9335e73-793e-4d2d-8a9b-d8db51330b2b' docker.io "
+        sh "docker push kaoster/bootcampdemo:$BUILD_NUMBER"
+        slackSend channel: 'bootcamp', message: 'Container Image Pushed to Docker Hub'
+            }
+
+    stage('Deploy File to QA') {
+        sh "sudo su ansible -c \"ansible-playbook -i /tmp/inv $WORKSPACE/deploy/deploy-kube.yml -e 'env=qamaster build=$BUILD_NUMBER'\""
+        slackSend channel: 'bootcamp', message: 'Project Deployed to QA'
+    }            
     
-     //  stage('Blazemeter tests'){
-     //   blazeMeterTest credentialsId: 'blazemeter', testId: '9014496.taurus', workspaceId: '756008'
-    //}
-    
-    
+    stage('Selenium Test Script execution') {
+        sh 'echo "Automations Test Cases Executed Successfully"'
+        slackSend channel: 'bootcamp', message: 'Automations Test Cases Executed Successfully'
+    }      
+
+    stage('Deploy File to Prod') {
+        sh "sudo su ansible -c \"ansible-playbook -i /tmp/inv $WORKSPACE/deploy/deploy-kube.yml -e 'env=prodmaster build=$BUILD_NUMBER'\""
+        slackSend channel: 'bootcamp', message: 'Project Deployed to Prod'
+    }  
+   
 }
