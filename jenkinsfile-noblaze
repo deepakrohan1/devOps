@@ -6,7 +6,7 @@ node {
     
      stage('Compile Package') {
         def mvnHome = tool name: 'maven3.6', type: 'maven'
-        sh "${mvnHome}/bin/mvn clean package"
+        sh "${mvnHome}/bin/mvn clean package"       
         slackSend channel: 'bootcamp', message: 'Packaging Java Code'
     }  
     
@@ -31,13 +31,14 @@ node {
 
     stage('Deploy War file to Tomcat') {
         deploy adapters: [tomcat8(credentialsId: 'tomcat-aws', path: '', url: 'http://3.141.174.85:8080/')], contextPath: '/sampleapp', onFailure: false, war: '**/*.war'
+        jiraAddComment comment: 'Test Server Deployement commpleted', idOrKey: 'TCSBDC-2', site: 'TCSBDC-2'
         slackSend channel: 'bootcamp', message: 'Deployed to Test Tomcat server'
     } 
 
-    //stage('Blazemeter tests'){
-    //    blazeMeterTest credentialsId: 'BlazeMeter_Rohan', testId: '9014496.taurus', workspaceId: '756008'
-    //    slackSend channel: 'bootcamp', message: 'Blazemete'
-    //}
+    // stage('Blazemeter tests'){
+    //     blazeMeterTest credentialsId: 'BlazeMeter_Rohan', testId: '9014496.taurus', workspaceId: '756008'
+    //     slackSend channel: 'bootcamp', message: 'Blazemete'
+    // }
 
     stage('Docker push') {
         sh "cd $WORKSPACE"
@@ -49,6 +50,7 @@ node {
 
     stage('Deploy File to QA') {
         sh "sudo su ansible -c \"ansible-playbook -i /tmp/inv $WORKSPACE/deploy/deploy-kube.yml -e 'env=qamaster build=$BUILD_NUMBER'\""
+        jiraAddComment comment: 'QA Server Deployement commpleted', idOrKey: 'TCSBDC-2', site: 'TCSBDC-2'
         slackSend channel: 'bootcamp', message: 'Project Deployed to QA'
     }            
     
