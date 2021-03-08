@@ -13,16 +13,16 @@
         <failOnMissingWebXml>false</failOnMissingWebXml>
         <vaadin.version>8.0.0.alpha2</vaadin.version>
         <vaadin.plugin.version>${vaadin.version}</vaadin.plugin.version>
-    </properties>
+    </properties> 
 
-    <repositories>
+    <!-- repositories>
         <repository>
             <id>vaadin-prereleases</id>
             <name>Vaadin Pre-releases</name>
             <url>https://maven.vaadin.com/vaadin-prereleases</url>
         </repository>
-        <!-- Essential Vaadin artifacts are in maven central, but maven.vaadin.com 
-            contains a huge set of additional libraries. See vaadin.com/directory -->
+        <Essential Vaadin artifacts are in maven central, but maven.vaadin.com 
+            contains a huge set of additional libraries. See vaadin.com/directory>
        <repository>
             <id>vaadin-addons</id>
             <url>http://maven.vaadin.com/vaadin-addons</url>
@@ -51,7 +51,7 @@
                 <enabled>true</enabled>
             </snapshots>
         </pluginRepository>
-    </pluginRepositories>
+    </pluginRepositories -->
 
 
     <dependencies>
