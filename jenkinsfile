@@ -31,7 +31,7 @@ node {
 
     stage('Deploy War file to Tomcat') {
         deploy adapters: [tomcat8(credentialsId: 'tomcat-aws', path: '', url: 'http://3.141.174.85:8080/')], contextPath: '/sampleapp', onFailure: false, war: '**/*.war'
-        jiraAddComment comment: 'Test Server Deployement commpleted', idOrKey: 'TCSBDC-2', site: 'TCSBDC-2'
+        jiraAddComment comment: 'Test Server Deployement commpleted', idOrKey: 'TCSBDC-3', site: 'TCSBDC-2'
         slackSend channel: 'bootcamp', message: 'Deployed to Test Tomcat server'
     } 
 
@@ -50,7 +50,7 @@ node {
 
     stage('Deploy File to QA') {
         sh "sudo su ansible -c \"ansible-playbook -i /tmp/inv $WORKSPACE/deploy/deploy-kube.yml -e 'env=qamaster build=$BUILD_NUMBER'\""
-        jiraAddComment comment: 'QA Server Deployement commpleted', idOrKey: 'TCSBDC-2', site: 'TCSBDC-2'
+        jiraAddComment comment: 'QA Server Deployement commpleted', idOrKey: 'TCSBDC-3', site: 'TCSBDC-2'
         slackSend channel: 'bootcamp', message: 'Project Deployed to QA'
     }            
     
