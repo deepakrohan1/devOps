@@ -27,18 +27,13 @@ node {
     //     rtMaven.resolver releaseRepo:'libs-release', snapshotRepo:'libs-snapshot', server: server
          buildInfo = rtMaven.run pom: 'pom.xml', goals: 'clean install'
          server.publishBuildInfo buildInfo
-     }
+    }
 
     stage('Deploy War file to Tomcat') {
         deploy adapters: [tomcat8(credentialsId: 'tomcat-aws', path: '', url: 'http://3.141.174.85:8080/')], contextPath: '/sampleapp', onFailure: false, war: '**/*.war'
         jiraAddComment comment: 'Test Server Deployement commpleted', idOrKey: 'TCSBDC-3', site: 'TCSBDC-2'
         slackSend channel: 'bootcamp', message: 'Deployed to Test Tomcat server'
     } 
-
-     stage('Blazemeter tests'){
-         blazeMeterTest credentialsId: 'BlazeMeter_Rohan', testId: '9014496.taurus', workspaceId: '756008'
-         slackSend channel: 'bootcamp', message: 'Blazemete'
-     }
 
     stage('Docker push') {
         sh "cd $WORKSPACE"
@@ -62,6 +57,11 @@ node {
     stage('Deploy File to Prod') {
         sh "sudo su ansible -c \"ansible-playbook -i /tmp/inv $WORKSPACE/deploy/deploy-kube.yml -e 'env=prodmaster build=$BUILD_NUMBER'\""
         slackSend channel: 'bootcamp', message: 'Project Deployed to Prod'
-    }  
+    }
+    
+    stage('Blazemeter tests'){
+         blazeMeterTest credentialsId: 'BlazeMeter_Rohan', testId: '9014496.taurus', workspaceId: '756008'
+         slackSend channel: 'bootcamp', message: 'Blazemete'
+    }
    
 }
