@@ -60,7 +60,7 @@ node {
     }
     
     stage('Blazemeter tests'){
-         blazeMeterTest credentialsId: 'BlazeMeter_Rohan', testId: '9014496.taurus', workspaceId: '756008'
+         blazeMeterTest credentialsId: 'Blaze_Prateek', testId: '9014496.taurus', workspaceId: '756008'
          slackSend channel: 'bootcamp', message: 'Blazemete'
     }
    
