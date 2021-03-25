@@ -1,0 +1,136 @@
+# TODO Need to add Key Pairs
+---
+Resources:
+  TestInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone: us-west-1c
+      ImageId: ami-0d9b7049d327ec00d
+      InstanceType: t2.micro
+      Tags:
+        - Key: Name
+          Value: Test
+      SecurityGroups:
+        - !Ref SSHSecurityGroup
+        - !Ref ServerSecurityGroup
+        - !Ref DockerSecGroup
+
+  ProdInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone: us-west-1c
+      ImageId: ami-0d9b7049d327ec00d
+      InstanceType: t2.micro
+      Tags:
+        - Key: Name
+          Value: Prod
+      SecurityGroups:
+        - !Ref SSHSecurityGroup
+        - !Ref ServerSecurityGroup
+        - !Ref DockerSecGroup
+
+  DeploymentInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone: us-west-1c
+      ImageId: ami-0d9b7049d327ec00d
+      InstanceType: t2.micro
+      Tags:
+        - Key: Name
+          Value: Deployment
+      SecurityGroups:
+        - !Ref SSHSecurityGroup
+        - !Ref ServerSecurityGroup
+        - !Ref DockerSecGroup
+        - !Ref JFrogSecGroup
+        - !Ref DockerSecGroup
+
+  SonarQ:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone: us-west-1c
+      ImageId: ami-0d9b7049d327ec00d
+      InstanceType: t2.micro
+      Tags:
+        - Key: Name
+          Value: SONAR
+      SecurityGroups:
+        - !Ref SSHSecurityGroup
+        - !Ref SonarSecurityGroup
+
+  ParentInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone: us-west-1c
+      ImageId: ami-0d9b7049d327ec00d
+      InstanceType: t2.micro
+      Tags:
+        - Key: Name
+          Value: ControllerForAnsible
+      SecurityGroups:
+        - !Ref ServerSecurityGroup
+
+  # SSH security group
+  SSHSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable SSH access via port 22
+      SecurityGroupIngress:
+      - CidrIp: 0.0.0.0/0
+        FromPort: 22
+        IpProtocol: tcp
+        ToPort: 22
+
+  # Jenkins Security group
+  ServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: allow connections from specified CIDR ranges
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 8080
+        ToPort: 8080
+        CidrIp: 0.0.0.0/0
+  
+  # Sonar
+  SonarSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: allow for sonar CIDR ranges
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 9000
+        ToPort: 9000
+        CidrIp: 0.0.0.0/0
+
+  PostGresSG:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: allow for postgres CIDR ranges
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 5432
+        ToPort: 5432
+        CidrIp: 0.0.0.0/0
+
+  
+  JFrogSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: allow for postgres CIDR ranges
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 8082
+        ToPort: 8082
+        CidrIp: 0.0.0.0/0
+
+  
+  DockerSecGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: allow for postgres CIDR ranges
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 8081
+        ToPort: 8081
+        CidrIp: 0.0.0.0/0
